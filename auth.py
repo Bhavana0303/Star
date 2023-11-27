@@ -203,5 +203,30 @@ async def notify_admin(username: str, email: str):
         server.login(smtp_username, smtp_password)
         server.sendmail(sender_email, admin_email, message.as_string())
 
+@router.put("/admin/action")
+async def admin_action(
+    email: str ,
+    action: str,
+    db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if action == "approve":
+        user.is_admin_approved = "approved"
+        user.is_active = True
+        db.commit()
+        return {"message": "User registration approved successfully"}
+
+    elif action == "reject":
+        user.is_admin_approved = "rejected"
+        user.is_active = False
+        db.commit()
+        return {"message": "User registration rejected successfully"}
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action, use 'approve' or 'reject'")
+
 
 
